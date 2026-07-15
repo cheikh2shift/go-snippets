@@ -10,13 +10,21 @@ function Run-Benchmark($path, $label) {
 
     $scriptBlock = {
         param($url, $dur)
+        # Using HttpClient for minimal overhead
+        $client = [System.Net.Http.HttpClient]::new()
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         $n = 0
+        
         while ($sw.Elapsed.TotalSeconds -lt $dur) {
             try { 
-                Invoke-WebRequest -Uri $url -Method GET -UseBasicParsing | Out-Null
-                $n++ 
-            } catch { Start-Sleep -Milliseconds 50 }
+                # Request headers only to minimize IO overhead
+                $res = $client.GetAsync($url).Result
+                if ($res.IsSuccessStatusCode) {
+                    $n++
+                }
+            } catch { 
+                Start-Sleep -Milliseconds 10 
+            }
         }
         return $n
     }
@@ -37,6 +45,4 @@ function Run-Benchmark($path, $label) {
 Run-Benchmark "/raw"     "RAW (zero-copy)"
 Run-Benchmark "/wrapped" "WRAPPED (copy-path)"
 
-# Instructions remain the same
-Write-Host "`n=== CPU capture (run in a 3rd terminal during the test) ===" -ForegroundColor Cyan
-Write-Host "  Option: typeperf '\Process(go)\% Processor Time' -si 1" -ForegroundColor White
+Write-Host "`nDone." -ForegroundColor Green
