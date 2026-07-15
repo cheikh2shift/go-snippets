@@ -10,21 +10,18 @@ function Run-Benchmark($path, $label) {
 
     $scriptBlock = {
         param($url, $dur)
-        # Using HttpClient for minimal overhead
+        # Load the assembly in the background process
+        Add-Type -AssemblyName System.Net.Http
         $client = [System.Net.Http.HttpClient]::new()
+        
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         $n = 0
         
         while ($sw.Elapsed.TotalSeconds -lt $dur) {
             try { 
-                # Request headers only to minimize IO overhead
                 $res = $client.GetAsync($url).Result
-                if ($res.IsSuccessStatusCode) {
-                    $n++
-                }
-            } catch { 
-                Start-Sleep -Milliseconds 10 
-            }
+                if ($res.IsSuccessStatusCode) { $n++ }
+            } catch { Start-Sleep -Milliseconds 10 }
         }
         return $n
     }
