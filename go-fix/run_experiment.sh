@@ -17,7 +17,7 @@ cat /tmp/before_output.txt
 
 echo
 echo "==> Running: go fix -diff ./..."
-go fix -diff ./...
+go fix -diff ./... || true
 
 echo
 echo "==> Applying fixes for real"
