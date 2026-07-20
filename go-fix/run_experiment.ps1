@@ -7,12 +7,12 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "  go fix modernizers — THE EXPERIMENT" -ForegroundColor Cyan
-Write-History "`n========================================" -ForegroundColor Cyan
+Write-Host "`n========================================" -ForegroundColor Cyan
 
 # 1. Show legacy code BEFORE
 Write-Host "`n[1] legacy.go BEFORE go fix:" -ForegroundColor Yellow
 Write-Host "----------------------------------------"
-Get-Content legacy.go
+Get-Content legacy\legacy.go
 
 # 2. Show the diff go fix WOULD apply (no changes yet)
 Write-Host "`n[2] go fix -diff (what the bot wants to change):" -ForegroundColor Yellow
@@ -26,7 +26,7 @@ go fix ./...
 # 4. Show legacy code AFTER
 Write-Host "`n[4] legacy.go AFTER go fix:" -ForegroundColor Green
 Write-Host "----------------------------------------"
-Get-Content legacy.go
+Get-Content legacy\legacy.go
 
 # 5. Prove behavior is unchanged
 Write-Host "`n[5] build + run (behavior must be identical):" -ForegroundColor Yellow
