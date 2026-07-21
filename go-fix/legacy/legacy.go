@@ -13,25 +13,33 @@ func ParsePairs(pairs []string) map[string]string {
 	result := make(map[string]string)
 	for _, pair := range pairs {
 		eq := strings.IndexByte(pair, '=')
-		result[pair[:eq]] = pair[1+eq:]
+		if eq >= 0 {
+			result[pair[:eq]] = pair[eq+1:]
+		}
 	}
 	return result
 }
 
 // maxOf returns the larger of two ints using an if/else ladder.
 func MaxOf(a, b int) int {
+	var x int
 	if a > b {
-		return a
+		x = a
+	} else {
+		x = b
 	}
-	return b
+	return x
 }
 
 // minOf returns the smaller of two ints using an if/else ladder.
 func MinOf(a, b int) int {
+	var x int
 	if a < b {
-		return a
+		x = a
+	} else {
+		x = b
 	}
-	return b
+	return x
 }
 
 // mapKeys gathers map keys into a slice with an explicit loop.
