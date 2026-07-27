@@ -1,0 +1,26 @@
+name: apidiff
+
+on:
+  pull_request:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  apidiff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Run apidiff
+        run: |
+          go install golang.org/x/exp/cmd/apidiff@latest
+          wt=$(mktemp -d)
+          git worktree add -q "$wt" v1.0.0
+          (cd "$wt" && apidiff -w "$wt/old.export" .)
+          apidiff -w new.export .
+          apidiff "$wt/old.export" new.export
