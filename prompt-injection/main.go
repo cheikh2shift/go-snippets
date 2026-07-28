@@ -22,6 +22,7 @@ func extractText(htmlInput string) string {
 	text = reTags.ReplaceAllString(text, " ")
 
 	text = strings.Join(strings.Fields(text), " ")
+	text = stripZeroWidthChars(text)
 	return text
 }
 
@@ -43,7 +44,7 @@ func main() {
 
 	start := time.Now()
 	escaper := NewEscaper()
-	clean, detections := escaper.Sanitize(rawText)
+	clean, detections := escaper.SanitizeConcurrent(rawText)
 	elapsed := time.Since(start)
 	log.Printf("Sanitized %d bytes in %v - found %d detections", len(rawText), elapsed, len(detections))
 
@@ -59,6 +60,9 @@ func main() {
 			fmt.Printf("  [%d] Rule: %s\n", i+1, d.Rule)
 			fmt.Printf("      Match:  %q\n", d.Match)
 			fmt.Printf("      Action: %s\n", d.Replacement)
+			if d.DecodedPayload != "" {
+				fmt.Printf("      Decoded: %s\n", d.DecodedPayload)
+			}
 			fmt.Println()
 		}
 	}

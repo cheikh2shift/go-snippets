@@ -10,9 +10,10 @@ import (
 )
 
 type Detection struct {
-	Rule        string
-	Match       string
-	Replacement string
+	Rule           string
+	Match          string
+	Replacement    string
+	DecodedPayload string
 }
 
 // Escaper holds compiled rules and sanitizes text against prompt injection.
@@ -223,11 +224,17 @@ func (e *Escaper) Sanitize(input string) (string, []Detection) {
 	for _, r := range e.rules {
 		matches := r.pattern.FindAllString(result, -1)
 		for _, m := range matches {
-			detections = append(detections, Detection{
+			d := Detection{
 				Rule:        r.name,
 				Match:       truncate(m, 100),
 				Replacement: r.replacement,
-			})
+			}
+			if r.name == "base64-payload" && isDataURI(m) {
+				if decoded, err := decodeBase64Payload(m); err == nil {
+					d.DecodedPayload = truncate(decoded, 200)
+				}
+			}
+			detections = append(detections, d)
 		}
 		result = r.pattern.ReplaceAllString(result, r.replacement)
 	}
@@ -280,26 +287,36 @@ func (e *Escaper) SanitizeConcurrent(input string) (string, []Detection) {
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	var detections []Detection
-	result := input
+
 	for _, r := range e.rules {
 		wg.Add(1)
 		go func(rule rule) {
 			defer wg.Done()
-			matches := rule.pattern.FindAllString(result, -1)
+			matches := rule.pattern.FindAllString(input, -1)
 			if len(matches) > 0 {
 				mu.Lock()
 				for _, m := range matches {
-					detections = append(detections, Detection{
+					d := Detection{
 						Rule:        rule.name,
 						Match:       truncate(m, 100),
 						Replacement: rule.replacement,
-					})
+					}
+					if rule.name == "base64-payload" && isDataURI(m) {
+						if decoded, err := decodeBase64Payload(m); err == nil {
+							d.DecodedPayload = truncate(decoded, 200)
+						}
+					}
+					detections = append(detections, d)
 				}
 				mu.Unlock()
 			}
-			result = rule.pattern.ReplaceAllString(result, rule.replacement)
 		}(r)
 	}
 	wg.Wait()
+
+	result := input
+	for _, r := range e.rules {
+		result = r.pattern.ReplaceAllString(result, r.replacement)
+	}
 	return result, detections
 }
