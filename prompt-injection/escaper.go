@@ -1,15 +1,18 @@
 package main
 
 import (
+	"encoding/base64"
+	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 )
 
-// Detection is a single match found during sanitization.
 type Detection struct {
-	Rule     string
-	Match    string
-	Replaced string
+	Rule        string
+	Match       string
+	Replacement string
 }
 
 // Escaper holds compiled rules and sanitizes text against prompt injection.
@@ -221,9 +224,9 @@ func (e *Escaper) Sanitize(input string) (string, []Detection) {
 		matches := r.pattern.FindAllString(result, -1)
 		for _, m := range matches {
 			detections = append(detections, Detection{
-				Rule:     r.name,
-				Match:    truncate(m, 100),
-				Replaced: r.replacement,
+				Rule:        r.name,
+				Match:       truncate(m, 100),
+				Replacement: r.replacement,
 			})
 		}
 		result = r.pattern.ReplaceAllString(result, r.replacement)
@@ -239,4 +242,64 @@ func truncate(s string, n int) string {
 		return s[:n] + "…"
 	}
 	return s
+}
+
+func stripZeroWidthChars(s string) string {
+	var result strings.Builder
+	for _, r := range s {
+		switch r {
+		case '\u200B', '\u200C', '\u200D', '\uFEFF', '\u2060', '\u180E':
+		default:
+			result.WriteRune(r)
+		}
+	}
+	return result.String()
+}
+
+func decodeBase64Payload(uri string) (string, error) {
+	parts := strings.SplitN(uri, ",", 2)
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid data URI")
+	}
+	decoded, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return "", fmt.Errorf("base64 decode failed: %w", err)
+	}
+	return string(decoded), nil
+}
+
+func isDataURI(s string) bool {
+	u, err := url.Parse(s)
+	if err != nil {
+		return false
+	}
+	return u.Scheme == "data"
+}
+
+func (e *Escaper) SanitizeConcurrent(input string) (string, []Detection) {
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	var detections []Detection
+	result := input
+	for _, r := range e.rules {
+		wg.Add(1)
+		go func(rule rule) {
+			defer wg.Done()
+			matches := rule.pattern.FindAllString(result, -1)
+			if len(matches) > 0 {
+				mu.Lock()
+				for _, m := range matches {
+					detections = append(detections, Detection{
+						Rule:        rule.name,
+						Match:       truncate(m, 100),
+						Replacement: rule.replacement,
+					})
+				}
+				mu.Unlock()
+			}
+			result = rule.pattern.ReplaceAllString(result, rule.replacement)
+		}(r)
+	}
+	wg.Wait()
+	return result, detections
 }
