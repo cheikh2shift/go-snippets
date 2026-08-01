@@ -5,3 +5,4 @@ oci-image
 docker-import
 *.tar
 server
+*.bin
