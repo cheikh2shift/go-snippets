@@ -6,3 +6,4 @@ docker-import
 *.tar
 server
 *.bin
+inference-engine/model/
