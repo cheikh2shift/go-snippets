@@ -21,7 +21,7 @@ Direct download links (HuggingFace `resolve/main`):
 Easiest: use the included resumable downloader, which fetches all of the above
 into `model/`:
 
-    GOEXPERIMENT=simd go build -o dl.exe ./download && .\dl.exe
+    go build -o dl.exe ./download && .\dl.exe
 
 Convert the downloaded checkpoint into llama2.c format:
 

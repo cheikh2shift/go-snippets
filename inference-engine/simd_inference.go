@@ -447,12 +447,6 @@ func (rt *Runtime) matVecIntoP(out, w, x []float32, cols int) {
 var (
 	dotOnce   sync.Once
 	dotVecLen int
-	// dotScratchPool hands each concurrent dotProduct its own reduction
-	// buffer (64 floats covers AVX-512 and beyond), so goroutines never
-	// share mutable scratch.
-	dotScratchPool = sync.Pool{
-		New: func() any { return make([]float32, 64) },
-	}
 )
 
 // dotProduct computes sum(a[i]*b[i]) in SIMD chunks using the Go 1.27
@@ -469,14 +463,15 @@ func dotProduct(a, b []float32) float32 {
 	for ; i+dotVecLen <= n; i += dotVecLen {
 		acc = simd.LoadFloat32s(a[i:]).MulAdd(simd.LoadFloat32s(b[i:]), acc)
 	}
-	scratch := dotScratchPool.Get().([]float32)
+	// A per-call local scratch does not escape, so it lives on the stack and
+	// costs nothing (a sync.Pool would force a heap allocation and churn).
+	scratch := make([]float32, 64)
 	acc.Store(scratch)
 
 	var sum float32
 	for _, v := range scratch {
 		sum += v
 	}
-	dotScratchPool.Put(scratch)
 	for ; i < n; i++ {
 		sum += a[i] * b[i]
 	}
