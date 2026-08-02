@@ -7,3 +7,4 @@ docker-import
 server
 *.bin
 inference-engine/model/
+ENGINE-SOURCE.md
