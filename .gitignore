@@ -9,3 +9,11 @@ server
 inference-engine/model/
 ENGINE-SOURCE.md
 *.exe
+
+# RAG experiment generated files
+RAG/docs/
+RAG/rag_experiment.db
+RAG/rag_experiment_results.json
+RAG/.
+report.*
+*.csv
