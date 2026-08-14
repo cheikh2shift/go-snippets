@@ -116,7 +116,17 @@ func auditShadowing() {
 	fset := token.NewFileSet()
 	for _, f := range parseFiles(fset) {
 		v := &shadowVisitor{fset: fset, scopes: []map[string]bool{{}}}
-		ast.Walk(v, f)
+		var stack []ast.Node
+		ast.Inspect(f, func(n ast.Node) bool {
+			if n != nil {
+				stack = append(stack, n)
+				v.Enter(n)
+				return true
+			}
+			v.Leave(stack[len(stack)-1])
+			stack = stack[:len(stack)-1]
+			return true
+		})
 	}
 	fmt.Println()
 }
@@ -126,7 +136,7 @@ type shadowVisitor struct {
 	scopes []map[string]bool
 }
 
-func (v *shadowVisitor) Enter(n ast.Node) ast.Visitor {
+func (v *shadowVisitor) Enter(n ast.Node) {
 	switch node := n.(type) {
 	case *ast.FuncDecl:
 		v.scopes = append(v.scopes, map[string]bool{})
@@ -156,7 +166,6 @@ func (v *shadowVisitor) Enter(n ast.Node) ast.Visitor {
 			}
 		}
 	}
-	return v
 }
 
 func (v *shadowVisitor) Leave(n ast.Node) {
@@ -214,7 +223,7 @@ func auditDuplication() {
 func normalize(n ast.Node) string {
 	var buf bytes.Buffer
 	ast.Inspect(n, func(x ast.Node) bool {
-		switch t := x.(type) {
+		switch x.(type) {
 		case *ast.Ident:
 			buf.WriteString("X")
 		case *ast.BasicLit:
@@ -242,24 +251,27 @@ func auditDeadCode() {
 	fset := token.NewFileSet()
 	files := parseFiles(fset)
 	declared := map[string]string{}
+	declPos := map[token.Pos]bool{}
 	referenced := map[string]bool{}
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			switch d := decl.(type) {
 			case *ast.FuncDecl:
 				declared[d.Name.Name] = "func"
+				declPos[d.Name.Pos()] = true
 			case *ast.GenDecl:
 				for _, spec := range d.Specs {
 					if vs, ok := spec.(*ast.ValueSpec); ok {
 						for _, name := range vs.Names {
 							declared[name.Name] = "var"
+							declPos[name.Pos()] = true
 						}
 					}
 				}
 			}
 		}
 		ast.Inspect(f, func(n ast.Node) bool {
-			if id, ok := n.(*ast.Ident); ok {
+			if id, ok := n.(*ast.Ident); ok && !declPos[id.Pos()] {
 				referenced[id.Name] = true
 			}
 			return true
