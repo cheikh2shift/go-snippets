@@ -1,0 +1,19 @@
+Call      = ident "(" [ ArgList ] ")" .
+ArgList   = Arg { "," Arg } .
+Arg       = ident "=" Value .
+Value     = str | num | bool | List | Obj | ident .
+List      = "[" [ Value { "," Value } ] "]" .
+Obj       = "{" [ Field { "," Field } ] "}" .
+Field     = ident ":" Value .
+bool      = "true" | "false" .
+ident     = letter { letter | digit | "_" } .
+str       = dquote { strchar } dquote .
+strchar   = letter | digit | space | punct | escape .
+escape    = backslash ( dquote | backslash | "n" | "t" ) .
+num       = [ "-" ] digit { digit } .
+letter    = "a" … "z" | "A" … "Z" | "_" .
+digit     = "0" … "9" .
+space     = " " | "\t" .
+punct     = "!" | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "{" | "|" | "}" | "~" .
+dquote    = "\"" .
+backslash = "\\" .
