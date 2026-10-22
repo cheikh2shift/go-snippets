@@ -1,0 +1,7 @@
+{
+	"name": "ts-server",
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": { "start": "tsx server.ts" },
+	"devDependencies": { "tsx": "^4.16.0", "@types/node": "^20.0.0", "typescript": "^5.5.0" }
+}
