@@ -1,0 +1,48 @@
+# AppArmor profile for the Go AppArmor experiment binary.
+# This profile is intentionally restrictive: it allows only what the
+# experiment needs to demonstrate confinement, and denies everything else.
+# Denials are logged to the kernel audit log so you can observe them.
+
+#include <tunables/global>
+
+profile go-apparmor /usr/local/bin/go-apparmor {
+    # --- Include base abstractions for libc, dynamic loader, etc. ---
+    #include <abstractions/base>
+
+    # --- Filesystem: read-only access to a curated set of paths ---
+    # Allow reading /etc/hostname (demonstrates allowed read)
+    /etc/hostname r,
+
+    # Allow reading /proc/self/status (capability probe)
+    /proc/self/status r,
+
+    # Allow writing to /tmp only (demonstrates allowed write)
+    /tmp/** rw,
+
+    # Deny everything else under /etc (covers /etc/shadow, /etc/passwd, etc.)
+    /etc/** deny,
+
+    # --- Network: deny all outbound network ---
+    network,
+
+    # --- Capabilities: deny all capabilities ---
+    capability,
+
+    # --- Process execution: deny exec of arbitrary binaries ---
+    /bin/ls ix deny,
+    /usr/bin/** ix deny,
+    /bin/sh ix deny,
+    /bin/bash ix deny,
+    deny /bin/** ix,
+    deny /usr/bin/** ix,
+
+    # --- Signals: deny sending signals to arbitrary processes ---
+    signal,
+
+    # --- Ptrace: deny ptrace ---
+    ptrace deny,
+
+    # --- Mount: deny mounts ---
+    mount deny,
+    umount deny,
+}
