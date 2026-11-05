@@ -108,10 +108,11 @@ Without a watchdog, a hung agent is a zombie. With a watchdog, it's automaticall
 
 Clearing the run:
 
+```bash
   systemctl stop ai-watchdog-test.service ai-watchdog-hang.service 2>/dev/null || true
   systemctl reset-failed ai-watchdog-test.service ai-watchdog-hang.service 2>/dev/null || true
   systemctl daemon-reload
   
   # verify they're gone
   systemctl list-units --all | grep ai-watchdog
-
+```
