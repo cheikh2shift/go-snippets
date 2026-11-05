@@ -21,7 +21,7 @@
             └──────────────┘
 ```
 
-The agent must call `sd\_notify("WATCHDOG=1")` at intervals shorter than `WatchdogSec`. If it doesn't, systemd sends SIGKILL — no graceful shutdown, no cleanup. This is intentional: a hung process can't respond to SIGTERM either.
+The agent must call `sd_notify("WATCHDOG=1")` at intervals shorter than `WatchdogSec`. If it doesn't, systemd sends SIGKILL — no graceful shutdown, no cleanup. This is intentional: a hung process can't respond to SIGTERM either.
 
 ## Files
 
@@ -108,17 +108,10 @@ Without a watchdog, a hung agent is a zombie. With a watchdog, it's automaticall
 
 Clearing the run:
 
-
-
-systemctl stop ai-watchdog-test.service ai-watchdog-hang.service 2>/dev/null || true
-
-systemctl reset-failed ai-watchdog-test.service ai-watchdog-hang.service 2>/dev/null || true
-
-systemctl daemon-reload
-
-
-
-\# verify they're gone
-
-systemctl list-units --all | grep ai-watchdog
+  systemctl stop ai-watchdog-test.service ai-watchdog-hang.service 2>/dev/null || true
+  systemctl reset-failed ai-watchdog-test.service ai-watchdog-hang.service 2>/dev/null || true
+  systemctl daemon-reload
+  
+  # verify they're gone
+  systemctl list-units --all | grep ai-watchdog
 
