@@ -1,0 +1,27 @@
+[Unit]
+Description=AI Inference Agent (with Watchdog)
+Documentation=https://github.com/cheikh2shift/go-snippets
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+NotifyAccess=all
+ExecStart=/usr/local/bin/go-agent
+WatchdogSec=30s
+Restart=always
+RestartSec=5s
+
+# Resource limits (optional but recommended)
+MemoryMax=1G
+CPUQuota=200%
+TasksMax=50
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateNetwork=yes
+ProtectSystem=strict
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
